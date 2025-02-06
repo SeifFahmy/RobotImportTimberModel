@@ -1,5 +1,4 @@
-﻿using System.Data.Common;
-using RobotOM;
+﻿using RobotOM;
 using Newtonsoft.Json;
 
 
