@@ -16,6 +16,10 @@ namespace RobotImportTimberModel
             var userCases = args[0];
 
             RobotApplication robotApp = new();
+            if (robotApp.Project.FileName == null)
+            {
+                throw new Exception("Robot model not open.");
+            }
 
             IRobotCollection bars = robotApp.Project.Structure.Bars.GetAll();
             IRobotBarForceServer forceServer = robotApp.Project.Structure.Results.Bars.Forces;
