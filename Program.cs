@@ -71,12 +71,10 @@ namespace RobotImportTimberModel
                         shearMajor = Math.Abs(currentShearMajor) > Math.Abs(shearMajor) ? Math.Abs(currentShearMajor) : shearMajor;
                         shearMinor = Math.Abs(currentShearMinor) > Math.Abs(shearMinor) ? Math.Abs(currentShearMinor) : shearMinor;
                         axial = Math.Abs(currentAxial) > Math.Abs(axial) ? currentAxial : axial;
-
-                        // TODO: track whether a member is a bending or axial member to determine which section sizes to assign them when designing (i.e. square or rectangular)
                     }
                 }
 
-                double barDeflection = deflectionServer.MaxValue(barId, deflectionCase).UZ;
+                double barDeflection = Math.Abs(deflectionServer.MaxValue(barId, deflectionCase).UZ);
 
                 var barStartNodeId = bar.StartNode;
                 var barEndNodeId = bar.EndNode;
@@ -86,7 +84,7 @@ namespace RobotImportTimberModel
 
                 // Assumes all columns are vertical
                 bool isAxialMember = false;
-                if (barStartNode.X - barEndNode.X < 0.1 && barStartNode.Y - barEndNode.Y < 0.1) { isAxialMember = true; }
+                if (Math.Abs(barStartNode.X - barEndNode.X) < 0.1 && Math.Abs(barStartNode.Y - barEndNode.Y) < 0.1) { isAxialMember = true; }
 
                 BarData barData = new() { Id = barId, MomentMajor = momentMajor, MomentMinor = momentMinor, ShearMajor = shearMajor, ShearMinor = shearMinor, Axial = axial, IsAxialMember = isAxialMember, Deflection = barDeflection, Area = sectionArea, SecondMomentOfArea = sectionI, Length = barLength };
                 robotData.Add(barData);
