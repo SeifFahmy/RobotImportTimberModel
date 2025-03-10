@@ -8,12 +8,13 @@ namespace RobotImportTimberModel
     {
         static void Main(string[] args)
         {
-            if (args.Length != 1)
+            if (args.Length != 2)
             {
                 throw new Exception("Invalid number of arguments passed.");
             }
 
             var userCases = args[0];
+            var deflectionCase = int.Parse(args[1]);
 
             RobotApplication robotApp = new();
             if (robotApp.Project.FileName == null)
@@ -23,6 +24,8 @@ namespace RobotImportTimberModel
 
             IRobotCollection bars = robotApp.Project.Structure.Bars.GetAll();
             IRobotBarForceServer forceServer = robotApp.Project.Structure.Results.Bars.Forces;
+            RobotBarDeflectionServer deflectionServer = robotApp.Project.Structure.Results.Bars.Deflections;
+            IRobotNodeServer nodeServer = robotApp.Project.Structure.Nodes;
 
             RobotSelection caseSelection = robotApp.Project.Structure.Selections.Create(IRobotObjectType.I_OT_CASE);
             caseSelection.FromText(userCases);
@@ -34,6 +37,7 @@ namespace RobotImportTimberModel
             {
                 IRobotBar bar = (IRobotBar)bars.Get(i);
                 int barId = bar.Number;
+                double barLength = bar.Length;
 
                 IRobotMaterialData barMaterialData = (IRobotMaterialData)bar.GetLabel(IRobotLabelType.I_LT_MATERIAL).Data;
                 if (barMaterialData.Type != IRobotMaterialType.I_MT_TIMBER)
@@ -41,9 +45,12 @@ namespace RobotImportTimberModel
                     continue;
                 }
 
+                IRobotBarSectionData sectionData = (IRobotBarSectionData)bar.GetLabel(IRobotLabelType.I_LT_BAR_SECTION).Data;
+                double sectionArea = sectionData.GetValue(IRobotBarSectionDataValue.I_BSDV_AX);
+                double sectionI = sectionData.GetValue(IRobotBarSectionDataValue.I_BSDV_IY);
+
                 double momentMajor, momentMinor, shearMajor, shearMinor, axial;
                 momentMajor = momentMinor = shearMajor = shearMinor = axial = 0;
-                bool isAxialMember = false;
 
                 var pointsAlong = new List<double>() { 0, 0.25, 0.5, 0.75, 1 };
                 foreach (var point in pointsAlong)
@@ -69,7 +76,19 @@ namespace RobotImportTimberModel
                     }
                 }
 
-                BarData barData = new() { Id = barId, MomentMajor = momentMajor, MomentMinor = momentMinor, ShearMajor = shearMajor, ShearMinor = shearMinor, Axial = axial, IsAxialMember = isAxialMember };
+                double barDeflection = deflectionServer.MaxValue(barId, deflectionCase).UZ;
+
+                var barStartNodeId = bar.StartNode;
+                var barEndNodeId = bar.EndNode;
+
+                var barStartNode = (IRobotNode)nodeServer.Get(barStartNodeId);
+                var barEndNode = (IRobotNode)nodeServer.Get(barEndNodeId);
+
+                // Assumes all columns are vertical
+                bool isAxialMember = false;
+                if (barStartNode.X - barEndNode.X < 0.1 && barStartNode.Y - barEndNode.Y < 0.1) { isAxialMember = true; }
+
+                BarData barData = new() { Id = barId, MomentMajor = momentMajor, MomentMinor = momentMinor, ShearMajor = shearMajor, ShearMinor = shearMinor, Axial = axial, IsAxialMember = isAxialMember, Deflection = barDeflection, Area = sectionArea, SecondMomentOfArea = sectionI, Length = barLength };
                 robotData.Add(barData);
             }
 
@@ -87,5 +106,9 @@ namespace RobotImportTimberModel
         public double ShearMinor { get; set; }
         public double Axial { get; set; }
         public bool IsAxialMember { get; set; }
+        public double Deflection { get; set; }
+        public double Area { get; set; }
+        public double SecondMomentOfArea { get; set; }
+        public double Length { get; set; }
     }
 }
