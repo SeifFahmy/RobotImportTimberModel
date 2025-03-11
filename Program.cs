@@ -13,8 +13,8 @@ namespace RobotImportTimberModel
                 throw new Exception("Invalid number of arguments passed.");
             }
 
-            var userCases = args[0];
-            var deflectionCase = int.Parse(args[1]);
+            var userUlsCases = args[0];
+            var userSlsCases = args[1];
 
             RobotApplication robotApp = new();
             if (robotApp.Project.FileName == null)
@@ -27,9 +27,13 @@ namespace RobotImportTimberModel
             RobotBarDeflectionServer deflectionServer = robotApp.Project.Structure.Results.Bars.Deflections;
             IRobotNodeServer nodeServer = robotApp.Project.Structure.Nodes;
 
-            RobotSelection caseSelection = robotApp.Project.Structure.Selections.Create(IRobotObjectType.I_OT_CASE);
-            caseSelection.FromText(userCases);
-            IRobotCollection cases = robotApp.Project.Structure.Cases.GetMany(caseSelection);
+            RobotSelection ulsCaseSelection = robotApp.Project.Structure.Selections.Create(IRobotObjectType.I_OT_CASE);
+            ulsCaseSelection.FromText(userUlsCases);
+            IRobotCollection ulsCases = robotApp.Project.Structure.Cases.GetMany(ulsCaseSelection);
+
+            RobotSelection slsCaseSelection = robotApp.Project.Structure.Selections.Create(IRobotObjectType.I_OT_CASE);
+            slsCaseSelection.FromText(userSlsCases);
+            IRobotCollection slsCases = robotApp.Project.Structure.Cases.GetMany(slsCaseSelection);
 
             var robotData = new List<BarData>();
 
@@ -55,9 +59,9 @@ namespace RobotImportTimberModel
                 var pointsAlong = new List<double>() { 0, 0.25, 0.5, 0.75, 1 };
                 foreach (var point in pointsAlong)
                 {
-                    for (int j = 1; j <= cases.Count; j++)
+                    for (int j = 1; j <= ulsCases.Count; j++)
                     {
-                        int caseNum = ((IRobotCase)cases.Get(j)).Number;
+                        int caseNum = ((IRobotCase)ulsCases.Get(j)).Number;
                         RobotBarForceData currentForces = forceServer.Value(barId, caseNum, point);
 
                         double currentMomentMajor = Math.Round(currentForces.MY / 1000, 2);
@@ -74,7 +78,14 @@ namespace RobotImportTimberModel
                     }
                 }
 
-                double barDeflection = Math.Abs(deflectionServer.MaxValue(barId, deflectionCase).UZ);
+                double barDeflection = double.NegativeInfinity;
+                for (int j = 1; j <= slsCases.Count; j++)
+                {
+                    int caseNum = ((IRobotCase)slsCases.Get(j)).Number;
+                    double currentBarDeflection = Math.Abs(deflectionServer.MaxValue(barId, caseNum).UZ);
+
+                    if (currentBarDeflection > barDeflection) { barDeflection = currentBarDeflection; }
+                }
 
                 var barStartNodeId = bar.StartNode;
                 var barEndNodeId = bar.EndNode;
