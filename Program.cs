@@ -97,7 +97,7 @@ namespace RobotImportTimberModel
                 bool isAxialMember = false;
                 if (Math.Abs(barStartNode.X - barEndNode.X) < 0.1 && Math.Abs(barStartNode.Y - barEndNode.Y) < 0.1) { isAxialMember = true; }
 
-                BarData barData = new() { Id = barId, MomentMajor = momentMajor, MomentMinor = momentMinor, ShearMajor = shearMajor, ShearMinor = shearMinor, Axial = axial, IsAxialMember = isAxialMember, Deflection = barDeflection, Area = sectionArea, SecondMomentOfArea = sectionI, Length = barLength };
+                BarData barData = new() { Id = barId, MomentMajor = momentMajor, MomentMinor = momentMinor, ShearMajor = shearMajor, ShearMinor = shearMinor, Axial = axial, IsAxialMember = isAxialMember, Deflection = barDeflection, Area = sectionArea, SecondMomentOfArea = sectionI, Length = barLength, MaterialE=barMaterialData.E, MaterialG=barMaterialData.GMean };
                 robotData.Add(barData);
             }
 
@@ -119,5 +119,8 @@ namespace RobotImportTimberModel
         public double Area { get; set; }
         public double SecondMomentOfArea { get; set; }
         public double Length { get; set; }
+        public double MaterialE { get; set; }
+        public double MaterialG { get; set; }
+
     }
 }
